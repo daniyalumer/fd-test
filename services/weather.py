@@ -6,22 +6,12 @@ from dateutil import parser
 from models.weather import (
     CurrentWeatherResponse,
     WeatherForecastResponse,
+    Location,
     CurrentWeather,
     HourlyForecast,
 )
 
-from utils.mappings import wmo_code_to_string
-
-# Dummy city-to-coordinates mapping for demonstration
-CITY_COORDS = {
-    "berlin": (52.52, 13.41),
-    "london": (51.51, -0.13),
-    "paris": (48.85, 2.35),
-}
-
-def city_to_coordinates(city: str) -> tuple:
-    # Simple mapping; in production, use a geocoding API
-    return CITY_COORDS.get(city.lower(), (52.52, 13.41))
+from utils.mappings import wmo_code_to_string, city_to_coordinates
 
 def get_weather_data(city: str) -> dict:
     latitude, longitude = city_to_coordinates(city)
@@ -102,7 +92,7 @@ def transform_weather_data(city: str, raw: dict) -> CurrentWeatherResponse:
     condition = wmo_code_to_string(weather_code)
 
     precipitation_probability = get_precipitation_probability_for_now(city)
-    city = city.title()
+    location = Location(city=city.title())
 
     current_weather = CurrentWeather(
         temperature=temperature,
@@ -112,7 +102,7 @@ def transform_weather_data(city: str, raw: dict) -> CurrentWeatherResponse:
         feels_like=feels_like,
         precipitation_probability=precipitation_probability,
     )
-    return CurrentWeatherResponse(city=city, current_weather=current_weather)
+    return CurrentWeatherResponse(location=location, current_weather=current_weather)
 
 def transform_forecast_data(city: str, raw: dict) -> WeatherForecastResponse:
     hourly = raw.get("hourly", {})
@@ -122,7 +112,7 @@ def transform_forecast_data(city: str, raw: dict) -> WeatherForecastResponse:
     precip_probs = hourly.get("precipitation_probability", [])
     weather_codes = hourly.get("weather_code", [])
 
-    city = city.title()
+    location = Location(city=city.title())
 
     hourly_forecast = [
         HourlyForecast(
@@ -137,4 +127,4 @@ def transform_forecast_data(city: str, raw: dict) -> WeatherForecastResponse:
         for i in range(min(len(times), 24))
     ]
 
-    return WeatherForecastResponse(city=city, hourly_forecast=hourly_forecast)
+    return WeatherForecastResponse(location=location, hourly_forecast=hourly_forecast)
