@@ -6,10 +6,11 @@ from dateutil import parser
 from models.weather import (
     CurrentWeatherResponse,
     WeatherForecastResponse,
-    Location,
     CurrentWeather,
     HourlyForecast,
 )
+
+from utils.mappings import wmo_code_to_string
 
 # Dummy city-to-coordinates mapping for demonstration
 CITY_COORDS = {
@@ -95,15 +96,14 @@ def transform_weather_data(city: str, raw: dict) -> CurrentWeatherResponse:
     wind_speed = current.get("wind_speed_10m", 0.0)
     weather_code = current.get("weather_code", 0)
     # Simple feels_like approximation
-    feels_like = temperature - (wind_speed * 0.7)
+    feels_like = round(temperature - (wind_speed * 0.7), 1)
 
-    # Map weather_code to a string condition (simplified)
-    condition = str(weather_code)
+    # Use mapping for human-readable condition
+    condition = wmo_code_to_string(weather_code)
 
-    # Use the already created function to get precipitation probability for now
     precipitation_probability = get_precipitation_probability_for_now(city)
+    city = city.title()
 
-    location = Location(city=city.title(), country="Unknown")
     current_weather = CurrentWeather(
         temperature=temperature,
         condition=condition,
@@ -112,7 +112,7 @@ def transform_weather_data(city: str, raw: dict) -> CurrentWeatherResponse:
         feels_like=feels_like,
         precipitation_probability=precipitation_probability,
     )
-    return CurrentWeatherResponse(location=location, current_weather=current_weather)
+    return CurrentWeatherResponse(city=city, current_weather=current_weather)
 
 def transform_forecast_data(city: str, raw: dict) -> WeatherForecastResponse:
     hourly = raw.get("hourly", {})
@@ -122,16 +122,19 @@ def transform_forecast_data(city: str, raw: dict) -> WeatherForecastResponse:
     precip_probs = hourly.get("precipitation_probability", [])
     weather_codes = hourly.get("weather_code", [])
 
+    city = city.title()
+
     hourly_forecast = [
         HourlyForecast(
             time=times[i],
             temperature_2m=temps[i] if i < len(temps) else 0.0,
-            condition=str(weather_codes[i]) if i < len(weather_codes) else "0",
+            condition=wmo_code_to_string(weather_codes[i]) if i < len(weather_codes) else "Unknown",
             precipitation_probability=precip_probs[i] if i < len(precip_probs) else 0,
-            feels_like=(temps[i] if i < len(temps) else 0.0) - ((wind_speeds[i] if i < len(wind_speeds) else 0.0) * 0.7),
-        )
+            feels_like=round(
+                (temps[i] if i < len(temps) else 0.0) - ((wind_speeds[i] if i < len(wind_speeds) else 0.0) * 0.7),
+                1),
+            )
         for i in range(min(len(times), 24))
     ]
 
-    location = Location(city=city.title(), country="Unknown")
-    return WeatherForecastResponse(location=location, hourly_forecast=hourly_forecast)
+    return WeatherForecastResponse(city=city, hourly_forecast=hourly_forecast)
