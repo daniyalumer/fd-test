@@ -8,6 +8,7 @@ fastapi = "*"
 requests = "*"
 python-dateutil = "*"
 uvicorn = "*"
+numpy = "*"
 
 [dev-packages]
 
