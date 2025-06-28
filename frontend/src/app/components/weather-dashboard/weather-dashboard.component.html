@@ -1,6 +1,8 @@
 <div style="max-width: 600px; margin: 0 auto; padding: 16px;">
-  <app-city-selector (cityChange)="onCityChange($event)"></app-city-selector>
-  <app-unit-toggle [unit]="unit" (unitChange)="onUnitChange($event)"></app-unit-toggle>
+  <div class="dashboard-controls">
+    <app-city-selector (cityChange)="onCityChange($event)"></app-city-selector>
+    <app-unit-toggle [unit]="unit" (unitChange)="onUnitChange($event)"></app-unit-toggle>
+  </div>
   <app-current-weather [currentWeather]="currentWeather" [unit]="unit"></app-current-weather>
   <app-forecast-chart [forecast]="forecast" [unit]="unit"></app-forecast-chart>
 </div>
