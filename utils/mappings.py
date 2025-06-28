@@ -31,3 +31,14 @@ WMO_CODE_MAP = {
 
 def wmo_code_to_string(code: int) -> str:
     return WMO_CODE_MAP.get(code, "Unknown")
+
+# Dummy city-to-coordinates mapping for demonstration
+CITY_COORDS = {
+    "berlin": (52.52, 13.41),
+    "london": (51.51, -0.13),
+    "paris": (48.85, 2.35),
+}
+
+def city_to_coordinates(city: str) -> tuple:
+    # Simple mapping; in production, use a geocoding API
+    return CITY_COORDS.get(city.lower(), (52.52, 13.41))
