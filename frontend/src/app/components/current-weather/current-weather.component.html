@@ -1,0 +1,8 @@
+<div *ngIf="currentWeather">
+  <h2>{{ currentWeather.location?.city }}</h2>
+  <p>Temperature: {{ toUnit(currentWeather.temperature) | number:'1.0-1' }}°{{ unit }}</p>
+  <p>Condition: {{ currentWeather.condition }}</p>
+  <p>Humidity: {{ currentWeather.humidity }}%</p>
+  <p>Wind Speed: {{ currentWeather.windSpeed }} km/h</p>
+  <p>Feels Like: {{ toUnit(currentWeather.feelsLike) | number:'1.0-1' }}°{{ unit }}</p>
+</div>

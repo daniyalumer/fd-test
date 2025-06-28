@@ -1,0 +1,8 @@
+<mat-form-field appearance="fill">
+  <mat-label>Select City</mat-label>
+  <mat-select [value]="selectedCity" (selectionChange)="onCityChange($event.value)">
+    <mat-option *ngFor="let city of cities" [value]="city.value">
+      {{ city.name }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>

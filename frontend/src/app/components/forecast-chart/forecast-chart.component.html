@@ -1,0 +1,7 @@
+<div *ngIf="forecast && forecast.length">
+  <canvas
+    baseChart
+    [data]="chartData"
+    [type]="'line'">
+  </canvas>
+</div>
