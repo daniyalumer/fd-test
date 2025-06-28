@@ -1,5 +1,9 @@
 from pydantic import BaseModel
 
+class Location(BaseModel):
+    city: str
+    country: str = "Unknown"  
+
 class CurrentWeather(BaseModel):
     temperature: float
     condition: str
@@ -16,9 +20,9 @@ class HourlyForecast(BaseModel):
     feels_like: float
 
 class CurrentWeatherResponse(BaseModel):
-    city: str
+    location: Location
     current_weather: CurrentWeather
 
 class WeatherForecastResponse(BaseModel):
-    city: str
+    location: Location
     hourly_forecast: list[HourlyForecast]
