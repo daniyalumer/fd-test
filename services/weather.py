@@ -1,4 +1,8 @@
 import requests
+
+from datetime import datetime
+from dateutil import parser
+
 from models.weather import (
     CurrentWeatherResponse,
     WeatherForecastResponse,
@@ -23,7 +27,9 @@ def get_weather_data(city: str) -> dict:
     url = (
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={latitude}&longitude={longitude}"
-        f"&current=temperature_2m,weather_code,humidity_2m,wind_speed_10m"
+        f"&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m"
+        f"&hourly=precipitation_probability"
+        f"&timezone=auto"
     )
     response = requests.get(url)
     if response.status_code != 200:
@@ -42,11 +48,50 @@ def get_weather_forecast(city: str) -> dict:
         raise Exception(f"Failed to fetch weather forecast for {city}. Status code: {response.status_code}")
     return response.json()
 
+def get_precipitation_probability_for_now(city: str) -> int:
+    """
+    Fetches hourly precipitation probability for the city and returns the value
+    for the current hour (matching year, month, day, hour).
+    """
+    latitude, longitude = city_to_coordinates(city)
+    url = (
+        f"https://api.open-meteo.com/v1/forecast"
+        f"?latitude={latitude}&longitude={longitude}"
+        f"&hourly=precipitation_probability"
+        f"&timezone=auto"
+    )
+    response = requests.get(url)
+    if response.status_code != 200:
+        return 0
+
+    data = response.json()
+    hourly = data.get("hourly", {})
+    times = hourly.get("time", [])
+    probs = hourly.get("precipitation_probability", [])
+
+    # Get current time rounded to the hour
+    now = datetime.now().replace(minute=0, second=0, microsecond=0)
+
+    # Try to find exact match for current hour
+    for time_str, prob in zip(times, probs):
+        forecast_time = parser.isoparse(time_str)
+        if forecast_time == now:
+            return prob
+
+    # If not found, fallback to the next closest future hour
+    for time_str, prob in zip(times, probs):
+        forecast_time = parser.isoparse(time_str)
+        if forecast_time > now:
+            return prob
+
+    # If still not found, return 0
+    return 0
+
 def transform_weather_data(city: str, raw: dict) -> CurrentWeatherResponse:
     current = raw.get("current", {})
     # Fallbacks for missing data
     temperature = current.get("temperature_2m", 0.0)
-    humidity = current.get("humidity_2m", 50.0)
+    humidity = current.get("relative_humidity_2m", 50.0)
     wind_speed = current.get("wind_speed_10m", 0.0)
     weather_code = current.get("weather_code", 0)
     # Simple feels_like approximation
@@ -55,6 +100,9 @@ def transform_weather_data(city: str, raw: dict) -> CurrentWeatherResponse:
     # Map weather_code to a string condition (simplified)
     condition = str(weather_code)
 
+    # Use the already created function to get precipitation probability for now
+    precipitation_probability = get_precipitation_probability_for_now(city)
+
     location = Location(city=city.title(), country="Unknown")
     current_weather = CurrentWeather(
         temperature=temperature,
@@ -62,6 +110,7 @@ def transform_weather_data(city: str, raw: dict) -> CurrentWeatherResponse:
         humidity=humidity,
         wind_speed=wind_speed,
         feels_like=feels_like,
+        precipitation_probability=precipitation_probability,
     )
     return CurrentWeatherResponse(location=location, current_weather=current_weather)
 
