@@ -10,6 +10,7 @@ class CurrentWeather(BaseModel):
     humidity: float
     wind_speed: float
     feels_like: float
+    precipitation_probability: int  
 
 class HourlyForecast(BaseModel):
     time: str
