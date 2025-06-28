@@ -35,7 +35,7 @@ def get_weather_forecast(city: str) -> dict:
     url = (
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={latitude}&longitude={longitude}"
-        f"&hourly=temperature_2m,precipitation_probability,wind_speed_10m,weather_code"
+        "&hourly=temperature_2m,precipitation_probability,wind_speed_10m,weather_code"
     )
     response = requests.get(url)
     if response.status_code != 200:
@@ -73,23 +73,16 @@ def transform_forecast_data(city: str, raw: dict) -> WeatherForecastResponse:
     precip_probs = hourly.get("precipitation_probability", [])
     weather_codes = hourly.get("weather_code", [])
 
-    hourly_forecast = []
-    for i in range(min(len(times), 24)):  # Only first 24 hours
-        temp = temps[i] if i < len(temps) else 0.0
-        wind = wind_speeds[i] if i < len(wind_speeds) else 0.0
-        precip = precip_probs[i] if i < len(precip_probs) else 0
-        code = weather_codes[i] if i < len(weather_codes) else 0
-        feels_like = temp - (wind * 0.7)
-        condition = str(code)
-        hourly_forecast.append(
-            HourlyForecast(
-                time=times[i],
-                temperature_2m=temp,
-                condition=condition,
-                precipitation_probability=precip,
-                feels_like=feels_like,
-            )
+    hourly_forecast = [
+        HourlyForecast(
+            time=times[i],
+            temperature_2m=temps[i] if i < len(temps) else 0.0,
+            condition=str(weather_codes[i]) if i < len(weather_codes) else "0",
+            precipitation_probability=precip_probs[i] if i < len(precip_probs) else 0,
+            feels_like=(temps[i] if i < len(temps) else 0.0) - ((wind_speeds[i] if i < len(wind_speeds) else 0.0) * 0.7),
         )
+        for i in range(min(len(times), 24))
+    ]
 
     location = Location(city=city.title(), country="Unknown")
     return WeatherForecastResponse(location=location, hourly_forecast=hourly_forecast)
