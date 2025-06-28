@@ -4,6 +4,6 @@ from controllers import weather
 router = APIRouter()
 
 router.include_router(
-    router,
+    weather.router,
     prefix="/api")
 
