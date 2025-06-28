@@ -2,9 +2,6 @@ from fastapi import APIRouter, HTTPException
 from models.weather import (
     CurrentWeatherResponse,
     WeatherForecastResponse,
-    Location,
-    CurrentWeather,
-    HourlyForecast,
 )
 from services.weather import (
     get_weather_data,
